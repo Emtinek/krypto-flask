@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify
 
 app = Flask(__name__)
@@ -16,5 +17,5 @@ def get_pumped_cryptos():
 if __name__ == '__main__':
     # Render wymaga bindowania do 0.0.0.0 i używania portu z ustawienia systemowego
     # Jeśli port nie jest ustawiony, używamy domyślnego portu 5000
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5000))  # Dodaliśmy import os w górnej części
     app.run(host='0.0.0.0', port=port, debug=True)
