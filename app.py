@@ -19,12 +19,28 @@ def get_cryptos_with_pump(threshold=200, period_days=10, calm_period_days=90):
         "sparkline": True
     }
     response = requests.get(url, params=params)
+    
+    # Sprawdź, czy odpowiedź jest poprawna
+    if response.status_code != 200:
+        print(f"Błąd podczas pobierania danych z API: {response.status_code}")
+        return []
+
     data = response.json()
 
     pumped_cryptos = []
     for crypto in data:
+        # Upewnij się, że crypto jest słownikiem (obiektem JSON)
+        if not isinstance(crypto, dict):
+            print(f"Niepoprawne dane dla kryptowaluty: {crypto}")
+            continue
+
         # Pobierz historię cen ze sparkliny (ostatnie 7 dni)
-        prices = crypto.get("sparkline_in_7d", {}).get("price", [])
+        sparkline = crypto.get("sparkline_in_7d", {})
+        if not isinstance(sparkline, dict):
+            print(f"Brak danych o sparkline dla kryptowaluty: {crypto.get('name', 'nieznana')}")
+            continue
+        
+        prices = sparkline.get("price", [])
         if len(prices) < period_days:
             continue
         
