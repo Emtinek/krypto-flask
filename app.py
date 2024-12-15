@@ -27,7 +27,10 @@ def get_cryptos_with_pump(threshold=200, period_days=10, calm_period_days=90):
 
     data = response.json()
 
+    # Logowanie liczby kryptowalut pobranych z API
+    print(f"Received {len(data)} cryptocurrencies data from CoinGecko.")  # Logowanie liczby pobranych danych
     pumped_cryptos = []
+
     for crypto in data:
         # Upewnij się, że crypto jest słownikiem (obiektem JSON)
         if not isinstance(crypto, dict):
@@ -95,6 +98,8 @@ def get_cryptos_with_pump(threshold=200, period_days=10, calm_period_days=90):
                 "growth": growth
             })
 
+    # Logowanie liczby kryptowalut z pumpą
+    print(f"Found {len(pumped_cryptos)} cryptocurrencies with pump.")  # Logowanie liczby kryptowalut z pumpą
     return pumped_cryptos
 
 # Strona główna
@@ -106,6 +111,11 @@ def home():
 @app.route('/get-pumped-cryptos', methods=['GET'])
 def get_pumped_cryptos():
     pumped_cryptos = get_cryptos_with_pump(200, period_days=10, calm_period_days=90)
+    
+    # Logowanie, jeśli zwrócone dane są puste
+    if not pumped_cryptos:
+        print("No pumped cryptocurrencies found.")
+    
     return jsonify(pumped_cryptos)
 
 # Uruchom serwer na odpowiednim porcie i hoście dla Rendera
