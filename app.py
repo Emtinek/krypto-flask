@@ -47,7 +47,18 @@ def get_cryptos_with_pump(threshold=200, period_days=10, calm_period_days=90):
             "interval": "daily"
         }
         historical_response = requests.get(historical_url, params=historical_params)
+        
+        # Upewnij się, że odpowiedź zawiera dane
+        if historical_response.status_code != 200:
+            print(f"Błąd podczas pobierania danych historycznych dla {crypto['name']}")
+            continue
+        
         historical_data = historical_response.json()
+
+        # Upewnij się, że dane historyczne są dostępne
+        if 'prices' not in historical_data:
+            print(f"Brak danych historycznych dla {crypto['name']}")
+            continue
 
         # Sprawdź, czy przez ostatnie 90 dni nie było większych wzrostów (czyli wzrosty były mniejsze niż np. 20%)
         calm = True
