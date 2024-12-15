@@ -32,19 +32,36 @@ def get_cryptos_with_pump(threshold=50, period_days=7, calm_period_days=30):
     pumped_cryptos = []
 
     for crypto in data:
-        # Pobierz historię cen ze sparkliny (ostatnie 7 dni)
+        # Pobierz podstawowe dane
+        name = crypto.get("name", "unknown")
+        symbol = crypto.get("symbol", "unknown")
+        current_price = crypto.get("current_price", "unknown")
+        price_change_percentage_24h = crypto.get("price_change_percentage_24h", 0)
+
+        # Jeśli `sparkline_in_7d` jest pusty, pomijamy analizę wzrostu
         sparkline = crypto.get("sparkline_in_7d")
-        
-        # Sprawdzanie obecności danych o sparklinie
-        if not sparkline or not isinstance(sparkline, dict):
-            print(f"Brak danych o sparkline dla {crypto.get('name', 'nieznana')}. Pełne dane: {crypto}")
+        if not sparkline:
+            print(f"Brak danych o sparkline dla {name}. Wyświetlamy podstawowe dane.")
+            pumped_cryptos.append({
+                "name": name,
+                "symbol": symbol,
+                "current_price": current_price,
+                "price_change_percentage_24h": price_change_percentage_24h,
+                "growth": "Brak danych"
+            })
             continue
-        
+
+        # Pobierz historię cen ze sparkliny (ostatnie 7 dni)
         prices = sparkline.get("price", [])
-        
-        # Sprawdź, czy dane o cenach są poprawne
         if not prices or len(prices) < period_days:
-            print(f"Zbyt mało danych w sparklinie dla {crypto.get('name', 'nieznana')} (ma tylko {len(prices)} dni). Pełne dane: {crypto}")
+            print(f"Zbyt mało danych w sparklinie dla {name} (ma tylko {len(prices)} dni). Wyświetlamy podstawowe dane.")
+            pumped_cryptos.append({
+                "name": name,
+                "symbol": symbol,
+                "current_price": current_price,
+                "price_change_percentage_24h": price_change_percentage_24h,
+                "growth": "Brak danych"
+            })
             continue
 
         # Oblicz wzrost ceny w ostatnich dniach
@@ -52,22 +69,35 @@ def get_cryptos_with_pump(threshold=50, period_days=7, calm_period_days=30):
             start_price = prices[0]
             end_price = prices[-1]
             growth = ((end_price - start_price) / start_price) * 100
-            print(f"{crypto.get('name')} ({crypto.get('symbol')}): wzrost = {growth:.2f}%")
         except (ZeroDivisionError, IndexError) as e:
-            print(f"Błąd podczas obliczania wzrostu dla {crypto.get('name')}: {e}. Pełne dane: {crypto}")
+            print(f"Błąd podczas obliczania wzrostu dla {name}: {e}. Wyświetlamy podstawowe dane.")
+            pumped_cryptos.append({
+                "name": name,
+                "symbol": symbol,
+                "current_price": current_price,
+                "price_change_percentage_24h": price_change_percentage_24h,
+                "growth": "Brak danych"
+            })
             continue
 
         # Sprawdź, czy wzrost przekracza threshold
         if growth < threshold:
+            pumped_cryptos.append({
+                "name": name,
+                "symbol": symbol,
+                "current_price": current_price,
+                "price_change_percentage_24h": price_change_percentage_24h,
+                "growth": f"{growth:.2f}% (poniżej progu)"
+            })
             continue
 
         # Dodaj kryptowalutę do listy wynikowej
         pumped_cryptos.append({
-            "name": crypto["name"],
-            "symbol": crypto["symbol"],
-            "start_price": start_price,
-            "end_price": end_price,
-            "growth": growth
+            "name": name,
+            "symbol": symbol,
+            "current_price": current_price,
+            "price_change_percentage_24h": price_change_percentage_24h,
+            "growth": f"{growth:.2f}% (przekracza próg)"
         })
 
     # Logowanie liczby kryptowalut z pumpą
