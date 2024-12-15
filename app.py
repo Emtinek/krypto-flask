@@ -18,37 +18,44 @@ def get_cryptos_with_pump(threshold=50, period_days=7, calm_period_days=30):
         "page": 1,
         "sparkline": True
     }
-    headers = {
-        "User-Agent": "KryptoPumpFinder/1.0"
-    }
-    response = requests.get(url, params=params, headers=headers)
-
+    response = requests.get(url, params=params)
+    
     # Sprawdź, czy odpowiedź jest poprawna
     if response.status_code != 200:
-        print(f"B\u0142\u0105d podczas pobierania danych z API: {response.status_code}")
+        print(f"Błąd podczas pobierania danych z API: {response.status_code}")
         return []
 
     data = response.json()
 
     # Logowanie liczby kryptowalut pobranych z API
-    print(f"Received {len(data)} cryptocurrencies data from CoinGecko.")
+    print(f"Received {len(data)} cryptocurrencies data from CoinGecko.")  # Logowanie liczby pobranych danych
     pumped_cryptos = []
 
     for crypto in data:
         # Pobierz historię cen ze sparkliny (ostatnie 7 dni)
-        sparkline = crypto.get("sparkline_in_7d", {})
+        sparkline = crypto.get("sparkline_in_7d")
+        
+        # Sprawdzanie obecności danych o sparklinie
+        if not sparkline or not isinstance(sparkline, dict):
+            print(f"Brak danych o sparkline dla {crypto.get('name', 'nieznana')}. Pełne dane: {crypto}")
+            continue
+        
         prices = sparkline.get("price", [])
-
-        # Ignoruj kryptowaluty, które nie mają wystarczających danych
+        
+        # Sprawdź, czy dane o cenach są poprawne
         if not prices or len(prices) < period_days:
-            print(f"Zbyt ma\u0142o danych w sparklinie dla {crypto.get('name', 'nieznana')} (ma tylko {len(prices)} dni). Pe\u0142ne dane: {crypto}")
+            print(f"Zbyt mało danych w sparklinie dla {crypto.get('name', 'nieznana')} (ma tylko {len(prices)} dni). Pełne dane: {crypto}")
             continue
 
         # Oblicz wzrost ceny w ostatnich dniach
-        start_price = prices[0]
-        end_price = prices[-1]
-        growth = ((end_price - start_price) / start_price) * 100
-        print(f"{crypto.get('name')} ({crypto.get('symbol')}): wzrost = {growth:.2f}%")
+        try:
+            start_price = prices[0]
+            end_price = prices[-1]
+            growth = ((end_price - start_price) / start_price) * 100
+            print(f"{crypto.get('name')} ({crypto.get('symbol')}): wzrost = {growth:.2f}%")
+        except (ZeroDivisionError, IndexError) as e:
+            print(f"Błąd podczas obliczania wzrostu dla {crypto.get('name')}: {e}. Pełne dane: {crypto}")
+            continue
 
         # Sprawdź, czy wzrost przekracza threshold
         if growth < threshold:
