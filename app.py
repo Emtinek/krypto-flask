@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Funkcja do pobierania kryptowalut z CoinGecko, które miały wzrost powyżej threshold w ostatnich dniach
-def get_cryptos_with_pump(threshold=50, period_days=7, calm_period_days=30):  # Zmniejszone wartości dla testów
+def get_cryptos_with_pump(threshold=50, period_days=7, calm_period_days=30):
     # Pobierz listę wszystkich kryptowalut z CoinGecko
     url = "https://api.coingecko.com/api/v3/coins/markets"
     params = {
@@ -18,36 +18,32 @@ def get_cryptos_with_pump(threshold=50, period_days=7, calm_period_days=30):  # 
         "page": 1,
         "sparkline": True
     }
-    response = requests.get(url, params=params)
-    
+    headers = {
+        "User-Agent": "KryptoPumpFinder/1.0"
+    }
+    response = requests.get(url, params=params, headers=headers)
+
     # Sprawdź, czy odpowiedź jest poprawna
     if response.status_code != 200:
-        print(f"Błąd podczas pobierania danych z API: {response.status_code}")
+        print(f"B\u0142\u0105d podczas pobierania danych z API: {response.status_code}")
         return []
 
     data = response.json()
 
     # Logowanie liczby kryptowalut pobranych z API
-    print(f"Received {len(data)} cryptocurrencies data from CoinGecko.")  # Logowanie liczby pobranych danych
+    print(f"Received {len(data)} cryptocurrencies data from CoinGecko.")
     pumped_cryptos = []
 
     for crypto in data:
-        # Upewnij się, że crypto jest słownikiem (obiektem JSON)
-        if not isinstance(crypto, dict):
-            print(f"Niepoprawne dane dla kryptowaluty: {crypto}")
-            continue
-
         # Pobierz historię cen ze sparkliny (ostatnie 7 dni)
         sparkline = crypto.get("sparkline_in_7d", {})
-        if not isinstance(sparkline, dict):
-            print(f"Brak danych o sparkline dla kryptowaluty: {crypto.get('name', 'nieznana')}")
-            continue
-        
         prices = sparkline.get("price", [])
-        if len(prices) < period_days:
-            print(f"Zbyt mało danych w sparklinie dla {crypto.get('name')} (ma tylko {len(prices)} dni).")
+
+        # Ignoruj kryptowaluty, które nie mają wystarczających danych
+        if not prices or len(prices) < period_days:
+            print(f"Zbyt ma\u0142o danych w sparklinie dla {crypto.get('name', 'nieznana')} (ma tylko {len(prices)} dni). Pe\u0142ne dane: {crypto}")
             continue
-        
+
         # Oblicz wzrost ceny w ostatnich dniach
         start_price = prices[0]
         end_price = prices[-1]
@@ -56,10 +52,9 @@ def get_cryptos_with_pump(threshold=50, period_days=7, calm_period_days=30):  # 
 
         # Sprawdź, czy wzrost przekracza threshold
         if growth < threshold:
-            print(f"{crypto.get('name')} nie spełnia wymagań wzrostu ({growth:.2f} < {threshold})")
             continue
 
-        # Wyłączamy tymczasowo sprawdzanie "spokoju" dla testów
+        # Dodaj kryptowalutę do listy wynikowej
         pumped_cryptos.append({
             "name": crypto["name"],
             "symbol": crypto["symbol"],
@@ -69,7 +64,7 @@ def get_cryptos_with_pump(threshold=50, period_days=7, calm_period_days=30):  # 
         })
 
     # Logowanie liczby kryptowalut z pumpą
-    print(f"Found {len(pumped_cryptos)} cryptocurrencies with pump.")  # Logowanie liczby kryptowalut z pumpą
+    print(f"Found {len(pumped_cryptos)} cryptocurrencies with pump.")
     return pumped_cryptos
 
 # Strona główna
@@ -93,4 +88,3 @@ if __name__ == '__main__':
     # Render wymaga bindowania do 0.0.0.0 i używania portu z ustawienia systemowego
     port = int(os.environ.get("PORT", 5000))  # Tu jest wymagany import os
     app.run(host='0.0.0.0', port=port, debug=True)
-
