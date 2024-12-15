@@ -1,7 +1,9 @@
-import os
 from flask import Flask, jsonify
+from flask_cors import CORS
+import os  # Potrzebne do pobierania portu z ustawień systemowych
 
 app = Flask(__name__)
+CORS(app)
 
 # Strona główna
 @app.route('/')
@@ -22,5 +24,5 @@ def get_pumped_cryptos():
 if __name__ == '__main__':
     # Render wymaga bindowania do 0.0.0.0 i używania portu z ustawienia systemowego
     # Jeśli port nie jest ustawiony, używamy domyślnego portu 5000
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5000))  # Tu jest wymagany import os
     app.run(host='0.0.0.0', port=port, debug=True)
